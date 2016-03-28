@@ -179,6 +179,10 @@ public class SavingsEnumerations {
                 optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.OVERDRAFT_INTEREST.getValue().longValue(),
                         SavingsAccountTransactionType.OVERDRAFT_INTEREST.getCode(), "Overdraft Interest");
             break;
+            case WITHHOLD_TAX:
+                optionData = new SavingsAccountTransactionEnumData(SavingsAccountTransactionType.WITHHOLD_TAX.getValue().longValue(),
+                        SavingsAccountTransactionType.WITHHOLD_TAX.getCode(), "Withhold Tax");
+            break;
         }
         return optionData;
     }

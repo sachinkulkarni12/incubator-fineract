@@ -164,6 +164,9 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
         final boolean isPreMatureClosure = false;
         final Set<Long> existingTransactionIds = new HashSet<>();
         final Set<Long> existingReversedTransactionIds = new HashSet<>();
+        /***
+         * Update account transactionIds for post journal entries.
+         */
         updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
         /*
          * <<<<<<< HEAD final SavingsAccountTransactionDTO transactionDTO = new
@@ -213,10 +216,7 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
             savingsTransactionId = withdrawal.getId();
         }
 
-        /***
-         * Update account transactionIds for post journal entries.
-         */
-        updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
+       
         account.close(user, command, tenantsTodayDate, changes);
         this.savingsAccountRepository.save(account);
 
@@ -239,6 +239,9 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
         final boolean isPreMatureClosure = false;
         final Set<Long> existingTransactionIds = new HashSet<>();
         final Set<Long> existingReversedTransactionIds = new HashSet<>();
+        /***
+         * Update account transactionIds for post journal entries.
+         */
         updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
 
         final MathContext mc = MathContext.DECIMAL64;
@@ -288,10 +291,7 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
             savingsTransactionId = withdrawal.getId();
         }
 
-        /***
-         * Update account transactionIds for post journal entries.
-         */
-        updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
+       
         account.close(user, command, tenantsTodayDate, changes);
 
         this.savingsAccountRepository.save(account);
@@ -348,12 +348,17 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
         final boolean isPreMatureClosure = true;
         final Set<Long> existingTransactionIds = new HashSet<>();
         final Set<Long> existingReversedTransactionIds = new HashSet<>();
+        /***
+         * Update account transactionIds for post journal entries.
+         */
         updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
 
         final LocalDate closedDate = command.localDateValueOfParameterNamed(SavingsApiConstants.closedOnDateParamName);
         final Locale locale = command.extractLocale();
         final DateTimeFormatter fmt = DateTimeFormat.forPattern(command.dateFormat()).withLocale(locale);
         Long savingsTransactionId = null;
+       
+        
         // post interest
         account.postPreMaturityInterest(closedDate, isPreMatureClosure, isSavingsInterestPostingAtCurrentPeriodEnd,
                 financialYearBeginningMonth);
@@ -378,10 +383,7 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
             savingsTransactionId = withdrawal.getId();
         }
 
-        /***
-         * Update account transactionIds for post journal entries.
-         */
-        updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
+      
         account.prematureClosure(user, command, tenantsTodayDate, changes);
 
         this.savingsAccountRepository.save(account);
@@ -404,6 +406,9 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
         boolean isRegularTransaction = false;
         final Set<Long> existingTransactionIds = new HashSet<>();
         final Set<Long> existingReversedTransactionIds = new HashSet<>();
+        /***
+         * Update account transactionIds for post journal entries.
+         */
         updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
 
         final LocalDate closedDate = command.localDateValueOfParameterNamed(SavingsApiConstants.closedOnDateParamName);
@@ -434,10 +439,7 @@ public class DepositAccountDomainServiceJpa implements DepositAccountDomainServi
             savingsTransactionId = withdrawal.getId();
         }
 
-        /***
-         * Update account transactionIds for post journal entries.
-         */
-        updateExistingTransactionsDetails(account, existingTransactionIds, existingReversedTransactionIds);
+
         account.prematureClosure(user, command, tenantsTodayDate, changes);
         this.savingsAccountRepository.save(account);
         postJournalEntries(account, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer);
