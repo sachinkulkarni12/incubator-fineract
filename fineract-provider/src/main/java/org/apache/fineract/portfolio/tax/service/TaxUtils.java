@@ -20,12 +20,10 @@
 package org.apache.fineract.portfolio.tax.service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.tax.domain.TaxComponent;
 import org.apache.fineract.portfolio.tax.domain.TaxGroupMappings;
@@ -45,6 +43,7 @@ public class TaxUtils {
                     BigDecimal percentage = component.getApplicablePercentage(date);
                     if (percentage != null) {
                         double percentageVal = percentage.doubleValue();
+                        /*double totalPer = cent_percentage + percentageVal;*/
                         double tax = amountVal * percentageVal / cent_percentage;
                         map.put(component, BigDecimal.valueOf(tax).setScale(scale, MoneyHelper.getRoundingMode()));
                     }
@@ -97,4 +96,46 @@ public class TaxUtils {
         }
         return totalAmount;
     }
+    
+    public static Map<TaxComponent, BigDecimal> splitTaxForLoanCharge(final BigDecimal amount, final LocalDate date,
+            final List<TaxGroupMappings> taxGroupMappings, final int scale) {
+        Map<TaxComponent, BigDecimal> map = new HashMap<>(3);
+        if (amount != null) {
+            double cent_percentage = Double.valueOf("100.0");
+            double chargeWithoutTax = getChargeWithoutTax(amount, date, taxGroupMappings);
+            for (TaxGroupMappings groupMappings : taxGroupMappings) {
+                if (groupMappings.occursOnDayFromAndUpToAndIncluding(date)) {
+                    TaxComponent component = groupMappings.getTaxComponent();
+                    BigDecimal percentage = component.getApplicablePercentage(date);
+                    if (percentage != null) {
+                        double percentageVal = percentage.doubleValue();
+                        double tax = chargeWithoutTax *(percentageVal / cent_percentage);
+                        map.put(component, BigDecimal.valueOf(tax).setScale(scale, MoneyHelper.getRoundingMode()));
+                    }
+                }
+            }
+        }
+        return map;
+    }
+
+    private static double getChargeWithoutTax(final BigDecimal amount, final LocalDate date, final List<TaxGroupMappings> taxGroupMappings) {
+        double cent_percentage = Double.valueOf("100.0");
+        BigDecimal percent = new BigDecimal("100.0");
+        final double amountVal = amount.doubleValue();
+        double feeAmount = 0;
+        for (TaxGroupMappings groupMappings : taxGroupMappings) {
+            if (groupMappings.occursOnDayFromAndUpToAndIncluding(date)) {
+                TaxComponent component = groupMappings.getTaxComponent();
+                BigDecimal percentage = component.getApplicablePercentage(date);
+                if (percentage != null) {
+                    percent = percent.add(percentage);
+                }
+            }
+        }
+        feeAmount = (amountVal * cent_percentage) / percent.doubleValue();
+
+        return feeAmount;
+    }
+    
+    
 }

@@ -462,7 +462,6 @@ public class JournalEntryWritePlatformServiceJpaRepositoryImpl implements Journa
     @Transactional
     @Override
     public void createJournalEntriesForLoan(final Map<String, Object> accountingBridgeData) {
-
         final boolean cashBasedAccountingEnabled = (Boolean) accountingBridgeData.get("cashBasedAccountingEnabled");
         final boolean upfrontAccrualBasedAccountingEnabled = (Boolean) accountingBridgeData.get("upfrontAccrualBasedAccountingEnabled");
         final boolean periodicAccrualBasedAccountingEnabled = (Boolean) accountingBridgeData.get("periodicAccrualBasedAccountingEnabled");

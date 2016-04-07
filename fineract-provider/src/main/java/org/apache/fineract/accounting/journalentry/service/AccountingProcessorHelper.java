@@ -140,6 +140,7 @@ public class AccountingProcessorHelper {
 
             final List<ChargePaymentDTO> feePaymentDetails = new ArrayList<>();
             final List<ChargePaymentDTO> penaltyPaymentDetails = new ArrayList<>();
+            final List<TaxPaymentDTO> taxPayments = new ArrayList<>();
             // extract charge payment details (if exists)
             if (map.containsKey("loanChargesPaid")) {
                 @SuppressWarnings("unchecked")
@@ -155,6 +156,16 @@ public class AccountingProcessorHelper {
                     } else {
                         feePaymentDetails.add(chargePaymentDTO);
                     }
+                    if (loanChargePaid.containsKey("taxDetails")) {
+                        @SuppressWarnings("unchecked")
+                        final List<Map<String, Object>> taxDatas = (List<Map<String, Object>>) loanChargePaid.get("taxDetails");
+                        for (final Map<String, Object> taxData : taxDatas) {
+                            final BigDecimal taxAmount = (BigDecimal) taxData.get("amount");
+                            final Long creditAccountId = (Long) taxData.get("creditAccountId");
+                            final Long debitAccountId = (Long) taxData.get("debitAccountId");
+                            taxPayments.add(new TaxPaymentDTO(debitAccountId, creditAccountId, taxAmount));
+                        }
+                    }
                 }
             }
 
@@ -164,7 +175,7 @@ public class AccountingProcessorHelper {
             }
             final LoanTransactionDTO transaction = new LoanTransactionDTO(transactionOfficeId, paymentTypeId, transactionId,
                     transactionDate, transactionType, amount, principal, interest, fees, penalties, overPayments, reversed,
-                    feePaymentDetails, penaltyPaymentDetails, isAccountTransfer);
+                    feePaymentDetails, penaltyPaymentDetails, isAccountTransfer, taxPayments);
 
             newLoanTransactions.add(transaction);
 
@@ -624,7 +635,7 @@ public class AccountingProcessorHelper {
     public void createCreditJournalEntryOrReversalForLoanCharges(final Office office, final String currencyCode,
             final int accountMappingTypeId, final Long loanProductId, final Long loanId, final String transactionId,
             final Date transactionDate, final BigDecimal totalAmount, final Boolean isReversal,
-            final List<ChargePaymentDTO> chargePaymentDTOs) {
+            final List<ChargePaymentDTO> chargePaymentDTOs, List<TaxPaymentDTO> taxPaymentDTOs) {
         /***
          * Map to track each account and the net credit to be made for a
          * particular account
@@ -647,12 +658,27 @@ public class AccountingProcessorHelper {
         BigDecimal totalCreditedAmount = BigDecimal.ZERO;
         for (final Map.Entry<GLAccount, BigDecimal> entry : creditDetailsMap.entrySet()) {
             final GLAccount account = entry.getKey();
-            final BigDecimal amount = entry.getValue();
+            BigDecimal amount = entry.getValue();
+            BigDecimal totalTaxAmount = BigDecimal.ZERO;
+
+            for (TaxPaymentDTO taxPaymentDTO : taxPaymentDTOs) {
+                if (taxPaymentDTO.getAmount() != null) {
+                    if (taxPaymentDTO.getCreditAccountId() != null) {
+                        final GLAccount glAccount  = getGLAccountById(taxPaymentDTO.getCreditAccountId());
+                        createCashBasedCreditJournalEntriesAndReversalsForLoans(office, currencyCode, loanId, transactionId, transactionDate, isReversal, glAccount,
+                                taxPaymentDTO.getAmount());
+                    } else {
+                        createCashBasedCreditJournalEntriesAndReversalsForLoans(office, currencyCode, loanId, transactionId, transactionDate, isReversal, account,
+                                taxPaymentDTO.getAmount());
+                    }
+                    totalTaxAmount = totalTaxAmount.add(taxPaymentDTO.getAmount());
+                }
+            }
             totalCreditedAmount = totalCreditedAmount.add(amount);
             if (isReversal) {
-                createDebitJournalEntryForLoan(office, currencyCode, account, loanId, transactionId, transactionDate, amount);
+                createDebitJournalEntryForLoan(office, currencyCode, account, loanId, transactionId, transactionDate, amount.subtract(totalTaxAmount));
             } else {
-                createCreditJournalEntryForLoan(office, currencyCode, account, loanId, transactionId, transactionDate, amount);
+                createCreditJournalEntryForLoan(office, currencyCode, account, loanId, transactionId, transactionDate, amount.subtract(totalTaxAmount));
             }
         }
 
@@ -662,6 +688,16 @@ public class AccountingProcessorHelper {
                 "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
                 "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction",
                 totalCreditedAmount, totalAmount); }
+    }
+
+    private void createCashBasedCreditJournalEntriesAndReversalsForLoans(final Office office, final String currencyCode, final Long loanId,
+            final String transactionId, final Date transactionDate, final Boolean isReversal, final GLAccount account,
+            final BigDecimal amount) {
+        if (isReversal) {
+            createDebitJournalEntryForLoan(office, currencyCode, account, loanId, transactionId, transactionDate, amount);
+        } else {
+            createCreditJournalEntryForLoan(office, currencyCode, account, loanId, transactionId, transactionDate, amount);
+        }
     }
 
     /**

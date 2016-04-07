@@ -211,10 +211,10 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         if (feesAmount != null && !(feesAmount.compareTo(BigDecimal.ZERO) == 0)) {
             totalDebitAmount = totalDebitAmount.add(feesAmount);
 
-            if (isIncomeFromFee) {
+            if (isIncomeFromFee || !loanTransactionDTO.getTaxPaymentDTOs().isEmpty()) {
                 this.helper.createCreditJournalEntryOrReversalForLoanCharges(office, currencyCode,
                         ACCRUAL_ACCOUNTS_FOR_LOAN.INCOME_FROM_FEES.getValue(), loanProductId, loanId, transactionId, transactionDate,
-                        feesAmount, isReversal, loanTransactionDTO.getFeePayments());
+                        feesAmount, isReversal, loanTransactionDTO.getFeePayments(), loanTransactionDTO.getTaxPaymentDTOs());
             } else {
                 this.helper.createCreditJournalEntryOrReversalForLoan(office, currencyCode, ACCRUAL_ACCOUNTS_FOR_LOAN.FEES_RECEIVABLE,
                         loanProductId, paymentTypeId, loanId, transactionId, transactionDate, feesAmount, isReversal);
@@ -224,10 +224,10 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         // handle penalties payment of writeOff (and reversals)
         if (penaltiesAmount != null && !(penaltiesAmount.compareTo(BigDecimal.ZERO) == 0)) {
             totalDebitAmount = totalDebitAmount.add(penaltiesAmount);
-            if (isIncomeFromFee) {
+            if (isIncomeFromFee || !loanTransactionDTO.getTaxPaymentDTOs().isEmpty()) {
                 this.helper.createCreditJournalEntryOrReversalForLoanCharges(office, currencyCode,
                         ACCRUAL_ACCOUNTS_FOR_LOAN.INCOME_FROM_PENALTIES.getValue(), loanProductId, loanId, transactionId, transactionDate,
-                        penaltiesAmount, isReversal, loanTransactionDTO.getPenaltyPayments());
+                        penaltiesAmount, isReversal, loanTransactionDTO.getPenaltyPayments(), loanTransactionDTO.getTaxPaymentDTOs());
             } else {
                 this.helper.createCreditJournalEntryOrReversalForLoan(office, currencyCode, ACCRUAL_ACCOUNTS_FOR_LOAN.PENALTIES_RECEIVABLE,
                         loanProductId, paymentTypeId, loanId, transactionId, transactionDate, penaltiesAmount, isReversal);
@@ -410,7 +410,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             }
             this.helper.createCreditJournalEntryOrReversalForLoanCharges(office, currencyCode,
                     CASH_ACCOUNTS_FOR_LOAN.INCOME_FROM_FEES.getValue(), loanProductId, loanId, transactionId, transactionDate, feesAmount,
-                    !isReversal, chargePaymentDTOs);
+                    !isReversal, chargePaymentDTOs, loanTransactionDTO.getTaxPaymentDTOs());
         }
 
         if (penaltiesAmount != null && !(penaltiesAmount.compareTo(BigDecimal.ZERO) == 0)) {
@@ -424,7 +424,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             
             this.helper.createCreditJournalEntryOrReversalForLoanCharges(office, currencyCode,
                     CASH_ACCOUNTS_FOR_LOAN.INCOME_FROM_PENALTIES.getValue(), loanProductId, loanId, transactionId, transactionDate,
-                    penaltiesAmount, !isReversal, chargePaymentDTOs);
+                    penaltiesAmount, !isReversal, chargePaymentDTOs, loanTransactionDTO.getTaxPaymentDTOs());
         }
 
         if (overPaymentAmount != null && !(overPaymentAmount.compareTo(BigDecimal.ZERO) == 0)) {

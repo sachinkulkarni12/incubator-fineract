@@ -302,7 +302,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
         public LoanChargeAccrualMapper() {
             StringBuilder sb = new StringBuilder(50);
             sb.append("lc.id as id, lc.charge_id as chargeId, ");
-            sb.append("lc.amount as amountDue, ");
+            sb.append("lc.amount - IFNULL(lc.tax_amount,0) as amountDue, ");
             sb.append("lc.amount_waived_derived as amountWaived, ");
             sb.append("lc.charge_time_enum as chargeTime, ");
             sb.append(" sum(cp.amount) as amountAccrued, ");

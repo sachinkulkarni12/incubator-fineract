@@ -597,7 +597,6 @@ public class Loan extends AbstractPersistable<Long> {
             chargeAmt = loanCharge.amountOrPercentage();
         }
         loanCharge.update(chargeAmt, loanCharge.getDueLocalDate(), amount, fetchNumberOfInstallmensAfterExceptions(), totalChargeAmt);
-
         // NOTE: must add new loan charge to set of loan charges before
         // reporcessing the repayment schedule.
         if (this.charges == null) {
@@ -1084,7 +1083,12 @@ public class Loan extends AbstractPersistable<Long> {
                             }
 
                         }
+                        loanCharge.updateLoanChargeTaxDetails(new LocalDate(loanDisbursementDetails.getDisbursementDate()));
                     }
+                } else if(loanCharge.isDueAtDisbursement()){
+                    loanCharge.updateLoanChargeTaxDetails(getDisbursementDate());
+                } else if(loanCharge.isSpecifiedDueDate()){
+                    loanCharge.updateLoanChargeTaxDetails(loanCharge.getDueLocalDate());
                 }
                 this.charges.add(loanCharge);
 
@@ -1103,9 +1107,9 @@ public class Loan extends AbstractPersistable<Long> {
             } else {
                 chargeAmt = loanCharge.amountOrPercentage();
             }
-            if (charge != null)
+            if (charge != null) {
                 charge.update(chargeAmt, loanCharge.getDueLocalDate(), amount, fetchNumberOfInstallmensAfterExceptions(), totalChargeAmt);
-
+            }
         }
 
         /** Updated deleted charges **/
@@ -2640,6 +2644,10 @@ public class Loan extends AbstractPersistable<Long> {
         final Integer installmentNumber = null;
         for (final LoanCharge charge : charges()) {
             Date actualDisbursementDate = getActualDisbursementDate(charge);
+            // update tax details for loan charge with actual disbursement date
+            if(charge.getTaxGroup() != null) {
+                charge.updateLoanChargeTaxDetails(disbursedOn);
+            }
             if ((charge.getCharge().getChargeTimeType() == ChargeTimeType.DISBURSEMENT.getValue() 
             		&& disbursedOn.equals(new LocalDate(actualDisbursementDate)) && actualDisbursementDate != null
                     && !charge.isWaived() && !charge.isFullyPaid())
@@ -2648,6 +2656,7 @@ public class Loan extends AbstractPersistable<Long> {
                             && !charge.isWaived() && !charge.isFullyPaid())) {
                 if (totalFeeChargesDueAtDisbursement.isGreaterThanZero() && !charge.getChargePaymentMode().isPaymentModeAccountTransfer()) {
                     charge.markAsFullyPaid();
+
                     // Add "Loan Charge Paid By" details to this transaction
                     final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(chargesPayment, charge, charge.amount(),
                             installmentNumber);
