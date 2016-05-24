@@ -41,6 +41,7 @@ import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidByData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanInstallmentChargeData;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.tax.data.TaxGroupData;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -156,11 +157,12 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
         final List<EnumOptionData> feeFrequencyOptions = this.dropdownReadPlatformService.retrievePeriodFrequencyTypeOptions();
         // this field is applicable only for client charges
         final Map<String, List<GLAccountData>> incomeOrLiabilityAccountOptions = null;
+        final Collection<TaxGroupData> taxGroupOptions = null;
 
         return ChargeData.template(null, allowedChargeCalculationTypeOptions, null, allowedChargeTimeOptions, null,
                 loansChargeCalculationTypeOptions, loansChargeTimeTypeOptions, savingsChargeCalculationTypeOptions,
                 savingsChargeTimeTypeOptions, clientChargeCalculationTypeOptions, clientChargeTimeTypeOptions, feeFrequencyOptions,
-                incomeOrLiabilityAccountOptions);
+                incomeOrLiabilityAccountOptions, taxGroupOptions);
     }
 
     @Override
@@ -300,7 +302,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
         public LoanChargeAccrualMapper() {
             StringBuilder sb = new StringBuilder(50);
             sb.append("lc.id as id, lc.charge_id as chargeId, ");
-            sb.append("lc.amount as amountDue, ");
+            sb.append("lc.amount - IFNULL(lc.tax_amount,0) as amountDue, ");
             sb.append("lc.amount_waived_derived as amountWaived, ");
             sb.append("lc.charge_time_enum as chargeTime, ");
             sb.append(" sum(cp.amount) as amountAccrued, ");

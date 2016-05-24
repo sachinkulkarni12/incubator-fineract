@@ -132,6 +132,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
 
             // save accounting mappings
             this.accountMappingWritePlatformService.createLoanProductToGLAccountMapping(loanproduct.getId(), command);
+
             // check if the office specific products are enabled. If yes, then save this savings product against a specific office
             // i.e. this savings product is specific for this office.
             fineractEntityAccessUtil.checkConfigurationAndAddProductResrictionsForUserOffice(
@@ -220,7 +221,6 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
             final Map<String, Object> accountingMappingChanges = this.accountMappingWritePlatformService
                     .updateLoanProductToGLAccountMapping(product.getId(), command, accountingTypeChanged, product.getAccountingType());
             changes.putAll(accountingMappingChanges);
-
             if (!changes.isEmpty()) {
                 this.loanProductRepository.saveAndFlush(product);
             }

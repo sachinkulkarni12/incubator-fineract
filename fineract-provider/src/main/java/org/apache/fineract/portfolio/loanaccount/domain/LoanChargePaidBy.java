@@ -19,14 +19,23 @@
 package org.apache.fineract.portfolio.loanaccount.domain;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.apache.fineract.portfolio.tax.domain.TaxComponent;
+import org.apache.fineract.portfolio.tax.service.TaxUtils;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
+import org.joda.time.LocalDate;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 @Entity
@@ -46,6 +55,11 @@ public class LoanChargePaidBy extends AbstractPersistable<Long> {
 
     @Column(name = "installment_number", nullable = true)
     private Integer installmentNumber;
+    
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "loan_charge_paid_by_id", referencedColumnName = "id", nullable = false)
+    private final List<LoanChargeTaxDetailsPaidBy> taxDetails = new ArrayList<>();
 
     protected LoanChargePaidBy() {
 
@@ -57,6 +71,8 @@ public class LoanChargePaidBy extends AbstractPersistable<Long> {
         this.loanCharge = loanCharge;
         this.amount = amount;
         this.installmentNumber = installmentNumber;
+        
+        createLoanChargeTaxDetailsPaidBy(loanCharge.getLoan().getDisbursementDate());
     }
 
     public LoanTransaction getLoanTransaction() {
@@ -86,5 +102,24 @@ public class LoanChargePaidBy extends AbstractPersistable<Long> {
     
     public Integer getInstallmentNumber() {
         return this.installmentNumber;
+    }
+    
+    public List<LoanChargeTaxDetailsPaidBy> getLoanChargeTaxDetailsPaidBy(){
+        return this.taxDetails;
+    }
+    
+    public void createLoanChargeTaxDetailsPaidBy(final LocalDate transactionDate) {
+        if(this.loanCharge.getTaxGroup() != null && this.amount.compareTo(BigDecimal.ZERO) == 1){
+            BigDecimal incomeAmount = BigDecimal.ZERO;
+            Map<TaxComponent, BigDecimal> taxDetails = TaxUtils.splitTaxForLoanCharge(this.amount, transactionDate, this.loanCharge.getTaxGroup().getTaxGroupMappings(), this.amount.scale());
+            BigDecimal totalTax = TaxUtils.totalTaxAmount(taxDetails);
+            if(totalTax.compareTo(BigDecimal.ZERO) == 1){
+                incomeAmount = this.amount;
+                for (Map.Entry<TaxComponent, BigDecimal> mapEntry : taxDetails.entrySet()) {
+                    this.getLoanChargeTaxDetailsPaidBy().add(new LoanChargeTaxDetailsPaidBy(mapEntry.getKey(), mapEntry.getValue()));
+                    incomeAmount = incomeAmount.subtract(mapEntry.getValue());
+                }
+            }
+        }
     }
 }

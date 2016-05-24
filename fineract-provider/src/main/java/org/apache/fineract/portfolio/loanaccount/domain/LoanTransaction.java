@@ -46,10 +46,12 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.UniqueConstraint;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -594,7 +596,15 @@ public final class LoanTransaction extends AbstractPersistable<Long> {
                 loanChargePaidData.put("isPenalty", chargePaidBy.getLoanCharge().isPenaltyCharge());
                 loanChargePaidData.put("loanChargeId", chargePaidBy.getLoanCharge().getId());
                 loanChargePaidData.put("amount", chargePaidBy.getAmount());
-
+                List<LoanChargeTaxDetailsPaidBy> taxDetails = chargePaidBy.getLoanChargeTaxDetailsPaidBy();
+                final List<Map<String, Object>> taxData = new ArrayList<>();
+                for (final LoanChargeTaxDetailsPaidBy taxDetail : taxDetails) {
+                    final Map<String, Object> taxDetailsData = new HashMap<>();
+                    taxDetailsData.put("amount", taxDetail.getAmount());
+                    taxDetailsData.put("creditAccountId", taxDetail.getTaxComponent().getCreditAcount().getId());
+                    taxData.add(taxDetailsData);
+                }
+                loanChargePaidData.put("taxDetails", taxData);
                 loanChargesPaidData.add(loanChargePaidData);
             }
             thisTransactionData.put("loanChargesPaid", loanChargesPaidData);
