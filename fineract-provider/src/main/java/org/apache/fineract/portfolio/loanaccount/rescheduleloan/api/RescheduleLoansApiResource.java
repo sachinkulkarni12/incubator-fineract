@@ -18,10 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.api;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -44,14 +41,10 @@ import org.apache.fineract.infrastructure.core.exception.UnrecognizedQueryParamE
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanRescheduleRequestToTermVariationMapping;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.data.LoanScheduleData;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleModel;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.RescheduleLoansApiConstants;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.data.LoanRescheduleRequestData;
-import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.LoanRescheduleRequest;
-import org.apache.fineract.portfolio.loanaccount.rescheduleloan.domain.LoanRescheduleRequestRepository;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanReschedulePreviewPlatformService;
 import org.apache.fineract.portfolio.loanaccount.rescheduleloan.service.LoanRescheduleRequestReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,7 +63,6 @@ public class RescheduleLoansApiResource {
     private final LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService;
     private final LoanReschedulePreviewPlatformService loanReschedulePreviewPlatformService;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
-    private final LoanRescheduleRequestRepository loanRescheduleRequestRepository;
 
     @Autowired
     public RescheduleLoansApiResource(final DefaultToApiJsonSerializer<LoanRescheduleRequestData> loanRescheduleRequestToApiJsonSerializer,
@@ -79,8 +71,7 @@ public class RescheduleLoansApiResource {
             final LoanRescheduleRequestReadPlatformService loanRescheduleRequestReadPlatformService,
             final ApiRequestParameterHelper apiRequestParameterHelper,
             final DefaultToApiJsonSerializer<LoanScheduleData> loanRescheduleToApiJsonSerializer,
-            final LoanReschedulePreviewPlatformService loanReschedulePreviewPlatformService,
-            final LoanRescheduleRequestRepository loanRescheduleRequestRepository) {
+            final LoanReschedulePreviewPlatformService loanReschedulePreviewPlatformService) {
         this.loanRescheduleRequestToApiJsonSerializer = loanRescheduleRequestToApiJsonSerializer;
         this.platformSecurityContext = platformSecurityContext;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
@@ -88,7 +79,6 @@ public class RescheduleLoansApiResource {
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.loanRescheduleToApiJsonSerializer = loanRescheduleToApiJsonSerializer;
         this.loanReschedulePreviewPlatformService = loanReschedulePreviewPlatformService;
-        this.loanRescheduleRequestRepository = loanRescheduleRequestRepository;
     }
 
     @GET
@@ -126,17 +116,6 @@ public class RescheduleLoansApiResource {
         final LoanRescheduleRequestData loanRescheduleRequestData = this.loanRescheduleRequestReadPlatformService
                 .readLoanRescheduleRequest(scheduleId);
         
-        final LoanRescheduleRequest loanRescheduleRequest = this.loanRescheduleRequestRepository.findOne(scheduleId);
-        Set<LoanRescheduleRequestToTermVariationMapping> loanRescheduleRequestToTermVariationMappings = loanRescheduleRequest
-                .getLoanRescheduleRequestToTermVariationMappings();
-        List<LoanTermVariationsData> loanTermVariations = new ArrayList<>();
-        for (LoanRescheduleRequestToTermVariationMapping loanRescheduleRequestToTermVariationMapping : loanRescheduleRequestToTermVariationMappings) {
-            if (loanRescheduleRequestToTermVariationMapping.getLoanTermVariations().parent() == null) {
-                loanTermVariations.add(loanRescheduleRequestToTermVariationMapping.getLoanTermVariations().toData());
-            }
-        }
-        loanRescheduleRequestData.updateLoanTermVariations(loanTermVariations);
-
         return this.loanRescheduleRequestToApiJsonSerializer.serialize(settings, loanRescheduleRequestData);
     }
 

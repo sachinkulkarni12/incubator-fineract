@@ -19,7 +19,6 @@
 package org.apache.fineract.portfolio.loanaccount.rescheduleloan.data;
 
 import java.util.Collection;
-import java.util.List;
 
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
@@ -42,16 +41,20 @@ public class LoanRescheduleRequestData {
     private final CodeValueData rescheduleReasonCodeValue;
     private final LoanRescheduleRequestTimelineData timeline;
     private final String rescheduleReasonComment;
+    @SuppressWarnings("unused")
     private final Collection<CodeValueData> rescheduleReasons;
-    private Collection<LoanTermVariationsData> loanTermVariationsData;
+    @SuppressWarnings("unused")
+    private final Collection<LoanTermVariationsData> loanTermVariationsData;
     
     /**
      * LoanRescheduleRequestData constructor
+     * @param loanTermVariationsData TODO
      **/
     private LoanRescheduleRequestData(Long id, Long loanId, LoanRescheduleRequestStatusEnumData statusEnum,
             Integer rescheduleFromInstallment, LocalDate rescheduleFromDate, CodeValueData rescheduleReasonCodeValue,
             String rescheduleReasonComment, LoanRescheduleRequestTimelineData timeline, final String clientName,
-            final String loanAccountNumber, final Long clientId, final Boolean recalculateInterest, Collection<CodeValueData> rescheduleReasons) {
+            final String loanAccountNumber, final Long clientId, final Boolean recalculateInterest,
+            Collection<CodeValueData> rescheduleReasons, final Collection<LoanTermVariationsData> loanTermVariationsData) {
 
         this.id = id;
         this.loanId = loanId;
@@ -66,21 +69,22 @@ public class LoanRescheduleRequestData {
         this.clientId = clientId;
         this.recalculateInterest = recalculateInterest;
         this.rescheduleReasons = rescheduleReasons ;
-        this.loanTermVariationsData = null;
+        this.loanTermVariationsData = loanTermVariationsData;
     }
 
     /**
+     * @param loanTermVariationsData TODO
      * @return an instance of the LoanRescheduleRequestData class
      **/
     public static LoanRescheduleRequestData instance(Long id, Long loanId, LoanRescheduleRequestStatusEnumData statusEnum,
             Integer rescheduleFromInstallment, LocalDate rescheduleFromDate, CodeValueData rescheduleReasonCodeValue,
             String rescheduleReasonComment, LoanRescheduleRequestTimelineData timeline, final String clientName,
             final String loanAccountNumber, final Long clientId, final Boolean recalculateInterest,
-            Collection<CodeValueData> rescheduleReasons) {
+            Collection<CodeValueData> rescheduleReasons, final Collection<LoanTermVariationsData> loanTermVariationsData) {
 
         return new LoanRescheduleRequestData(id, loanId, statusEnum, rescheduleFromInstallment, rescheduleFromDate,
                 rescheduleReasonCodeValue, rescheduleReasonComment, timeline, clientName, loanAccountNumber, clientId, recalculateInterest,
-                rescheduleReasons);
+                rescheduleReasons, loanTermVariationsData);
     }
 
     /**
@@ -171,9 +175,5 @@ public class LoanRescheduleRequestData {
         }
 
         return value;
-    }
-    
-    public void updateLoanTermVariations(List<LoanTermVariationsData> loanTermVariationsData) {
-        this.loanTermVariationsData = loanTermVariationsData;
     }
 }
