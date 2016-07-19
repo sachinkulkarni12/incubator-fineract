@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.fineract.organisation.monetary.data.MoneyData;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
@@ -869,7 +868,7 @@ public final class LoanApplicationTerms {
     private Money calculateTotalInterestPerInstallmentWithoutGrace(final PaymentPeriodsInOneYearCalculator calculator, final MathContext mc) {
 
         final Money totalInterestForLoanTerm = calculateTotalFlatInterestDueWithoutGrace(calculator, mc);
-        Money interestPerInstallment = totalInterestForLoanTerm.dividedBy(Long.valueOf(this.actualNumberOfRepayments - this.extraPeriods) - defaultToZeroIfNull(this.excludePeriodsForCalculation), mc.getRoundingMode());
+        Money interestPerInstallment = totalInterestForLoanTerm.dividedBy(Long.valueOf(this.actualNumberOfRepayments) - defaultToZeroIfNull(this.excludePeriodsForCalculation), mc.getRoundingMode());
         if (this.excludePeriodsForCalculation < this.periodsCompleted) {
             Money interestLeft = this.totalInterestDue.minus(this.totalInterestAccounted);
             interestPerInstallment = interestLeft.dividedBy(Long.valueOf(this.actualNumberOfRepayments)
@@ -942,14 +941,12 @@ public final class LoanApplicationTerms {
                     defaultToZeroIfNull(this.excludePeriodsForCalculation));
 
             interestForInstallment = realTotalInterestForLoan
-                    .dividedBy(BigDecimal.valueOf(interestPaymentDuePeriods- this.extraPeriods), mc.getRoundingMode());
+                    .dividedBy(BigDecimal.valueOf(interestPaymentDuePeriods), mc.getRoundingMode());
             if (this.excludePeriodsForCalculation < this.periodsCompleted) {
-                if (this.excludePeriodsForCalculation < this.periodsCompleted) {
-                    Money interestLeft = this.totalInterestDue.minus(this.totalInterestAccounted);
-                    Integer interestDuePeriods = calculateNumberOfRemainingInterestPaymentPeriods(this.actualNumberOfRepayments,
-                            defaultToZeroIfNull(this.periodsCompleted));
-                    interestForInstallment = interestLeft.dividedBy(Long.valueOf(interestDuePeriods), mc.getRoundingMode());
-                }
+                Money interestLeft = this.totalInterestDue.minus(this.totalInterestAccounted);
+                Integer interestDuePeriods = calculateNumberOfRemainingInterestPaymentPeriods(this.actualNumberOfRepayments,
+                        defaultToZeroIfNull(this.periodsCompleted));
+                interestForInstallment = interestLeft.dividedBy(Long.valueOf(interestDuePeriods), mc.getRoundingMode());
             }
             
 
@@ -1088,10 +1085,6 @@ public final class LoanApplicationTerms {
         }
         Integer periodsRemaining = totalNumberOfRepaymentPeriods - periodsElapsed - principalFeePeriods;
         return periodsRemaining;
-    }
-
-    private Integer calculateNumberOfRepaymentPeriodsWhereInterestPaymentIsDue(final Integer totalNumberOfRepaymentPeriods) {
-        return totalNumberOfRepaymentPeriods - Math.max(getInterestChargingGrace(), getInterestPaymentGrace());
     }
 
     public boolean isPrincipalGraceApplicableForThisPeriod(final int periodNumber) {

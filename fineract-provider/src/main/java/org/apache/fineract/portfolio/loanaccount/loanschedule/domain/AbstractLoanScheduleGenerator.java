@@ -991,14 +991,19 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         for (LoanTermVariationsData variation : interestRatesForInstallments) {
             if (variation.isApplicable(modifiedScheduledDueDate) && variation.getDecimalValue() != null && !variation.isProcessed()) {
                 loanApplicationTerms.updateAnnualNominalInterestRate(variation.getDecimalValue());
-                if (!loanApplicationTerms.getInterestMethod().isDecliningBalnce()) {
+                if (loanApplicationTerms.getInterestMethod().isDecliningBalnce()) {
+                    if (loanApplicationTerms.getActualFixedEmiAmount() == null) {
+                        loanApplicationTerms.setFixedEmiAmount(null);
+                    }
+                } else {
                     Money totalInterestDueForLoan = Money.zero(loanApplicationTerms.getCurrency());
                     loanApplicationTerms.setTotalPrincipalAccounted(scheduleParams.getTotalCumulativePrincipal());
                     totalInterestDueForLoan = loanApplicationTerms.calculateTotalInterestCharged(calculator, mc);
                     totalInterestDueForLoan = totalInterestDueForLoan.plus(scheduleParams.getTotalCumulativeInterest());
                     loanApplicationTerms.updateTotalInterestDue(totalInterestDueForLoan);
                     // exclude till last period in calculations
-                    loanApplicationTerms.updateExcludePeriodsForCalculation(scheduleParams.getPeriodNumber()-1);
+                    loanApplicationTerms.updateExcludePeriodsForCalculation(scheduleParams.getPeriodNumber() - 1);
+
                 }
                 variation.setProcessed(true);
             }
@@ -1106,9 +1111,11 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         for (LoanTermVariationsData variation : loanApplicationTerms.getLoanTermVariations().getInterestRateFromInstallment()) {
             if (variation.isApplicable(modifiedScheduledDueDate) && variation.getDecimalValue() != null && !variation.isProcessed()) {
                 loanApplicationTerms.updateAnnualNominalInterestRate(variation.getDecimalValue());
-                if (!loanApplicationTerms.getInterestMethod().isDecliningBalnce()) {
+                if (loanApplicationTerms.getInterestMethod().isDecliningBalnce()) {
+                    adjustInstallmentOrPrincipalAmount(loanApplicationTerms, totalCumulativePrincipal, instalmentNumber, mc);
+                } else {
                     loanApplicationTerms.setTotalPrincipalAccounted(totalCumulativePrincipal);
-                    loanApplicationTerms.updateExcludePeriodsForCalculation(instalmentNumber-1);
+                    loanApplicationTerms.updateExcludePeriodsForCalculation(instalmentNumber - 1);
                 }
                 variation.setProcessed(true);
             }
@@ -1428,18 +1435,6 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
             transactions.removeAll(applicableTransactions);
         }
         return applicableTransactions;
-    }
-
-    private Collection<LoanTermVariationsData> getApplicableTermVariationsForPeriod(final LocalDate fromDate, final LocalDate dueDate,
-            final Collection<LoanTermVariationsData> variations) {
-        Collection<LoanTermVariationsData> applicableVariations = new ArrayList<>();
-        for (LoanTermVariationsData detail : variations) {
-            if (detail.isApplicable(fromDate, dueDate)) {
-                applicableVariations.add(detail);
-            }
-        }
-        variations.removeAll(applicableVariations);
-        return applicableVariations;
     }
 
     private List<LoanTransaction> createCurrentTransactionList(RecalculationDetail detail) {
@@ -2120,7 +2115,6 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
             updateAmortization(mc, loanApplicationTerms, periodNumber, outstandingBalance);
             
             // count periods without interest grace to exclude for flat loan calculations
-            int excludeInterestGracePeriods = 0;
 
             final Map<LocalDate, Money> disburseDetailMap = new HashMap<>();
             if (loanApplicationTerms.isMultiDisburseLoan()) {
@@ -2195,10 +2189,6 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
                         break;
                     }*/
                     periodNumber++;
-                    //Count interest free and interest grace to exclude for flat loan calculations
-                    if (!loanApplicationTerms.isInterestPaymentGraceApplicableForThisPeriod(instalmentNumber)) {
-                        excludeInterestGracePeriods++;
-                    }
 
                     for (LoanTermVariationsData dueDateVariation : dueDateVariationsDataList) {
                         dueDateVariation.setProcessed(true);
@@ -2630,15 +2620,6 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
                 feeCharges.getAmount(), penaltyCharges.getAmount(), false, compoundingDetails);
     }
 
-    /**
-     * set the value to zero if the provided value is null
-     * 
-     * @return integer value equal/greater than 0
-     **/
-    private Integer defaultToZeroIfNull(Integer value) {
-
-        return (value != null) ? value : 0;
-    }
 
     private final class LoanTermVariationParams {
 
